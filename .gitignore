@@ -1,0 +1,10 @@
+venv/
+venv311/
+.venv/
+__pycache__/
+*.pyc
+uploads/
+reports/
+.vscode/
+*.zip
+.DS_Store

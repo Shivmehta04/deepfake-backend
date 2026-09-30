@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Detection System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            border-left: 4px solid #764ba2;
+            padding-left: 16px;
+        }
+
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab-btn {
+            background: none;
+            color: #667eea;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #764ba2;
+            border-bottom: 3px solid #764ba2;
+            margin-bottom: -2px;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f5f0ff;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .file-info {
+            color: #666;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.fake {
+            background: #fee2e2;
+            color: #d32f2f;
+        }
+
+        .badge.real {
+            background: #e0f2e9;
+            color: #2e7d32;
+        }
+
+        .download-link {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .download-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal */
+        .result-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1000;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 20px;
+            }
+            table {
+                font-size: 12px;
+            }
+            .tab-btn {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🛡️ Deepfake Detection System</h1>
+            <div class="subtitle">Audio · Image · Video | Real-time deepfake analysis</div>
+
+            <!-- Tabs as shown in your screenshots -->
+            <div class="tab-bar">
+                <button class="tab-btn active" data-type="image">🖼️ Image</button>
+                <button class="tab-btn" data-type="audio">🎵 Audio</button>
+                <button class="tab-btn" data-type="video">🎥 Video</button>
+            </div>
+
+            <!-- Upload section (dynamic based on active tab) -->
+            <div id="uploadSection">
+                <h3 id="uploadTitle">📷 Image</h3>
+                <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📂</div>
+                    <div id="uploadText">Drag & drop or click to upload image</div>
+                    <div class="file-info" id="fileInfo">Supports JPG, PNG, BMP (max 10MB)</div>
+                </div>
+                <input type="file" id="fileInput" style="display:none">
+                <div style="text-align: center">
+                    <button id="detectBtn" onclick="uploadAndDetect()">🔍 Upload & Detect</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Recent Detections</h3>
+            <table id="detectionsTable">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Type</th>
+                        <th>Result</th>
+                        <th>Confidence</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+                <tbody id="detectionsBody">
+                    {% for d in detections %}
+                    <tr>
+                        <td>{{ d.file }}</td>
+                        <td>{{ d.type }}</td>
+                        <td><span class="badge {% if d.result == 'FAKE' %}fake{% else %}real{% endif %}">{{ d.result }}</span></td>
+                        <td>{{ d.confidence }}%</td>
+                        <td><a class="download-link" onclick="downloadReport('{{ d.report_id }}')">📄 Download</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for showing detection result -->
+    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+    <div class="result-modal" id="resultModal">
+        <h2 id="modalResult"></h2>
+        <p id="modalConfidence"></p>
+        <button onclick="closeModal()">Close</button>
+    </div>
+
+    <script>
+        // Current selected file and type
+        let currentFile = null;
+        let currentType = 'image';   // 'image', 'audio', 'video'
+
+        // File type configurations (matching backend allowed extensions)
+        const typeConfig = {
+            image: {
+                title: '📷 Image',
+                prompt: 'Drag & drop or click to upload image',
+                info: 'Supports JPG, PNG, BMP (max 10MB)',
+                accept: 'image/jpeg,image/png,image/bmp',
+                extensions: ['jpg', 'jpeg', 'png', 'bmp']
+            },
+            audio: {
+                title: '🎵 Audio',
+                prompt: 'Drag & drop or click to upload audio',
+                info: 'Supports MP3, WAV, M4A (max 20MB)',
+                accept: 'audio/mpeg,audio/wav,audio/m4a',
+                extensions: ['mp3', 'wav', 'm4a']
+            },
+            video: {
+                title: '🎬 Video',
+                prompt: 'Drag & drop or click to upload video',
+                info: 'Supports MP4, AVI, MOV (max 50MB)',
+                accept: 'video/mp4,video/avi,video/quicktime',
+                extensions: ['mp4', 'avi', 'mov']
+            }
+        };
+
+        // DOM elements
+        const uploadTitle = document.getElementById('uploadTitle');
+        const uploadText = document.getElementById('uploadText');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileInput = document.getElementById('fileInput');
+        const detectBtn = document.getElementById('detectBtn');
+
+        // Tab switching
+        function setActiveType(type) {
+            currentType = type;
+            // Update tab button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.type === type) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            // Update UI text and accept attribute
+            const cfg = typeConfig[type];
+            uploadTitle.innerHTML = cfg.title;
+            uploadText.innerHTML = cfg.prompt;
+            fileInfo.innerHTML = cfg.info;
+            fileInput.accept = cfg.accept;
+            // Reset file selection
+            currentFile = null;
+            fileInput.value = '';
+            uploadText.innerHTML = cfg.prompt;
+        }
+
+        // Add event listeners to tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setActiveType(btn.dataset.type);
+            });
+        });
+
+        // File selection via input
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                currentFile = e.target.files[0];
+                uploadText.innerHTML = `✅ ${currentFile.name}`;
+            } else {
+                currentFile = null;
+                uploadText.innerHTML = typeConfig[currentType].prompt;
+            }
+        });
+
+        // Drag & drop support
+        const dropZone = document.getElementById('uploadArea');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#764ba2';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#ccc';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+            if (e.dataTransfer.files.length > 0) {
+                currentFile = e.dataTransfer.files[0];
+                // Optional: validate extension matches current type
+                const ext = currentFile.name.split('.').pop().toLowerCase();
+                if (typeConfig[currentType].extensions.includes(ext)) {
+                    uploadText.innerHTML = `✅ ${currentFile.name}`;
+                    fileInput.files = e.dataTransfer.files; // sync input
+                } else {
+                    alert(`Invalid file type. Please upload ${typeConfig[currentType].info}`);
+                    currentFile = null;
+                    uploadText.innerHTML = typeConfig[currentType].prompt;
+                }
+            }
+        });
+
+        // Upload and detect
+        async function uploadAndDetect() {
+            if (!currentFile) {
+                alert('Please select a file first');
+                return;
+            }
+
+            // Check extension matches current tab (basic)
+            const ext = currentFile.name.split('.').pop().toLowerCase();
+            if (!typeConfig[currentType].extensions.includes(ext)) {
+                alert(`File type mismatch. Please upload a ${currentType} file (${typeConfig[currentType].info})`);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+
+            detectBtn.disabled = true;
+            detectBtn.textContent = '⏳ Analyzing...';
+
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Show modal with result
+                    const modal = document.getElementById('resultModal');
+                    const overlay = document.getElementById('overlay');
+                    document.getElementById('modalResult').innerHTML = data.result === 'FAKE' ? '⚠️ FAKE Detected!' : '✅ REAL Media';
+                    document.getElementById('modalConfidence').innerHTML = `Confidence: ${data.confidence.toFixed(1)}%`;
+                    modal.style.display = 'block';
+                    overlay.style.display = 'block';
+
+                    // Refresh the recent detections table without full page reload
+                    refreshTable();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+            } finally {
+                detectBtn.disabled = false;
+                detectBtn.textContent = '🔍 Upload & Detect';
+                // Reset file selection
+                currentFile = null;
+                fileInput.value = '';
+                uploadText.innerHTML = typeConfig[currentType].prompt;
+            }
+        }
+
+        // Refresh the recent detections table by fetching the updated HTML
+        async function refreshTable() {
+            try {
+                const response = await fetch('/');
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTbody = doc.querySelector('#detectionsBody');
+                if (newTbody) {
+                    document.getElementById('detectionsBody').innerHTML = newTbody.innerHTML;
+                }
+            } catch (err) {
+                console.error('Could not refresh table', err);
+            }
+        }
+
+        // Download report
+        async function downloadReport(reportId) {
+            window.location.href = `/download_report/${reportId}`;
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // Initialize with image tab active
+        setActiveType('image');
+    </script>
+</body>
+</html>
