@@ -8,3 +8,5 @@ reports/
 .vscode/
 *.zip
 .DS_Store
+models/*.h5
+models/*.keras
